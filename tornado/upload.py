@@ -31,10 +31,17 @@ def is_safe_path(basedir, path, follow_symlinks=True):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self):
-        if "upfile" not in self.request.files:
+        if "upfile" in self.request.files:
+            upfile = self.request.files['upfile'][0]
+            filename = upfile['filename']
+            data = upfile['body']
+        else:
+            filename = self.get_body_argument("upfilename", default=None)
+            data = self.get_body_argument("updata", default=None)
+
+        if filename is None or data is None:
             raise tornado.web.HTTPError(400)
-        upfile = self.request.files['upfile'][0]
-        filename = upfile['filename'] 
+
         filepath = normalize_path(os.path.normpath(os.path.join(
             UPLOAD_DIR, self.get_body_argument("updir", default=""), filename)))
         if not is_safe_path(UPLOAD_DIR, filepath):
@@ -43,7 +50,7 @@ class UploadHandler(tornado.web.RequestHandler):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         try:
             with open(filepath, "wb") as f:
-                f.write(upfile['body'])
+                f.write(data)
             logging.info("{} uploaded {}, saved as {}".format(self.request.remote_ip, filename, filepath))
             self.write({"result": "upload OK"})
         except OSError as e:
