@@ -36,14 +36,14 @@ class UploadHandler(tornado.web.RequestHandler):
             filename = upfile['filename']
             data = upfile['body']
         else:
-            filename = self.get_body_argument("upfilename", default=None)
-            data = self.get_body_argument("updata", default=None)
+            filename = self.get_query_argument("filename", default=None)
+            data = self.request.body
 
         if filename is None or data is None:
             raise tornado.web.HTTPError(400)
 
         filepath = normalize_path(os.path.normpath(os.path.join(
-            UPLOAD_DIR, self.get_body_argument("updir", default=""), filename)))
+            UPLOAD_DIR, self.get_argument("updir", default=""), filename)))
         if not is_safe_path(UPLOAD_DIR, filepath):
             logging.error("UPLOAD_DIR=%s filepath=%s", UPLOAD_DIR, filepath)
             raise tornado.web.HTTPError(400)
