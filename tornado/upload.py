@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
-import tornado.httpserver
-import tornado.ioloop
-import tornado.web
 import logging
 import re
 import unicodedata
+from datetime import datetime
 
+import tornado.httpserver
+import tornado.ioloop
+import tornado.web
 from tornado.options import define, options, parse_command_line
+import filetype
 
 define("port", default=8080, help="run on the given port", type=int)
 
@@ -31,19 +33,18 @@ def is_safe_path(basedir, path, follow_symlinks=True):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self):
-        if "upfile" in self.request.files:
-            upfile = self.request.files['upfile'][0]
-            filename = upfile['filename']
-            data = upfile['body']
-        else:
-            filename = self.get_query_argument("filename", default=None)
-            data = self.request.body
-
-        if filename is None or data is None:
+        nodeid = self.get_argument("nodeid", default=None)
+        data = self.request.body
+        kind = filetype.guess(data)
+        if nodeid is None or kind is None:
             raise tornado.web.HTTPError(400)
 
+        prefix = self.get_query_argument("prefix", default="")
+        timestamp = datetime.today().strftime('%Y%m%d_%H%M')
+        filename = "".join((prefix, timestamp, ".", kind.extension))
+        y, m, d = datetime.today().strftime('%Y %m %d').split()
         filepath = normalize_path(os.path.normpath(os.path.join(
-            UPLOAD_DIR, self.get_argument("updir", default=""), filename)))
+            UPLOAD_DIR, nodeid, y, m, d, filename)))
         if not is_safe_path(UPLOAD_DIR, filepath):
             logging.error("UPLOAD_DIR=%s filepath=%s", UPLOAD_DIR, filepath)
             raise tornado.web.HTTPError(400)

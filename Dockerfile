@@ -2,7 +2,7 @@ FROM alpine:latest
 
 MAINTAINER Bruno Binet <bruno.binet@helioslite.com>
 
-RUN apk add --no-cache py3-tornado py3-magic
+RUN apk add --no-cache py3-tornado py3-filetype
 
 ADD tornado /app
 WORKDIR /app
