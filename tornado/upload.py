@@ -23,16 +23,13 @@ def normalize_path(path: str) -> str:
                 .encode("ascii", "ignore").decode("ascii")
             ).strip("._")
 
+def is_valid_prefix(s):
+    if not isinstance(s, str): return False
+    return re.match(r"^[a-z0-9_-]*$", s, re.IGNORECASE) is not None
+
 def is_valid_nodeid(s):
-    if not isinstance(s, str):
-        return False
-    if len(s) != 32:
-        return False
-    try:
-        int(s, 16)
-        return True
-    except ValueError:
-        return False
+    if not isinstance(s, str): return False
+    return re.match(r"^[a-f0-9]{32}$", s, re.IGNORECASE) is not None
 
 def is_safe_path(basedir, path, follow_symlinks=True):
     # resolves symbolic links
@@ -44,13 +41,13 @@ def is_safe_path(basedir, path, follow_symlinks=True):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self):
-        nodeid = self.get_argument("nodeid", default="").strip()
+        nodeid = self.get_argument("nodeid", default="")
         data = self.request.body
         kind = filetype.guess(data)
-        if not is_valid_nodeid(nodeid) or kind is None:
+        prefix = self.get_query_argument("prefix", default="")
+        if not (is_valid_nodeid(nodeid) and is_valid_prefix(prefix) and kind):
             raise tornado.web.HTTPError(400)
 
-        prefix = self.get_query_argument("prefix", default="")
         timestamp = datetime.today().strftime('%Y%m%d_%H%M')
         filename = "".join((prefix, timestamp, ".", kind.extension))
         y, m, d = datetime.today().strftime('%Y %m %d').split()
