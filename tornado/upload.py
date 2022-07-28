@@ -23,6 +23,17 @@ def normalize_path(path: str) -> str:
                 .encode("ascii", "ignore").decode("ascii")
             ).strip("._")
 
+def is_valid_nodeid(s):
+    if not isinstance(s, str):
+        return False
+    if len(s) != 32:
+        return False
+    try:
+        int(s, 16)
+        return True
+    except ValueError:
+        return False
+
 def is_safe_path(basedir, path, follow_symlinks=True):
     # resolves symbolic links
     if follow_symlinks:
@@ -33,10 +44,10 @@ def is_safe_path(basedir, path, follow_symlinks=True):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self):
-        nodeid = self.get_argument("nodeid", default=None)
+        nodeid = self.get_argument("nodeid", default="").strip()
         data = self.request.body
         kind = filetype.guess(data)
-        if nodeid is None or kind is None:
+        if not is_valid_nodeid(nodeid) or kind is None:
             raise tornado.web.HTTPError(400)
 
         prefix = self.get_query_argument("prefix", default="")
