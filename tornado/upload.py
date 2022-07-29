@@ -48,7 +48,7 @@ class UploadHandler(tornado.web.RequestHandler):
         if not (is_valid_nodeid(nodeid) and is_valid_prefix(prefix) and kind):
             raise tornado.web.HTTPError(400)
 
-        timestamp = datetime.today().strftime('%Y%m%d_%H%M')
+        timestamp = datetime.today().strftime('%Y%m%d_%H%M%S')
         filename = "".join((prefix, timestamp, ".", kind.extension))
         y, m, d = datetime.today().strftime('%Y %m %d').split()
         filepath = normalize_path(os.path.normpath(os.path.join(
